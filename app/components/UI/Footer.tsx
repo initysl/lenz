@@ -1,6 +1,20 @@
 import Link from 'next/link';
+import { BsGithub, BsTwitterX } from 'react-icons/bs';
 
 export default function Footer() {
+  const socials = [
+    {
+      name: 'X (Twitter)',
+      icon: <BsTwitterX />,
+      href: 'https://x.com/your-handle',
+    },
+    {
+      name: 'GitHub',
+      icon: <BsGithub />,
+      href: 'https://github.com/your-repo',
+    },
+  ];
+
   return (
     <footer className='py-16 border-t border-white/10'>
       <div className='grid grid-cols-1 md:grid-cols-4 gap-12 mb-12'>
@@ -14,43 +28,13 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Product */}
-        <div>
-          <h4 className='font-bold mb-4'>Product</h4>
-          <ul className='space-y-2 text-sm text-zinc-400'>
-            <li>
-              <Link href='#features' className='hover:text-white transition'>
-                Features
-              </Link>
-            </li>
-            <li>
-              <Link
-                href='#how-it-works'
-                className='hover:text-white transition'
-              >
-                How It Works
-              </Link>
-            </li>
-            <li>
-              <Link href='#' className='hover:text-white transition'>
-                Pricing
-              </Link>
-            </li>
-            {/* <li>
-              <Link href='#' className='hover:text-white transition'>
-                FAQ
-              </Link>
-            </li> */}
-          </ul>
-        </div>
-
         {/* Company */}
         <div>
           <h4 className='font-bold mb-4'>Company</h4>
           <ul className='space-y-2 text-sm text-zinc-400'>
             <li>
               <Link href='#' className='hover:text-white transition'>
-                About Us
+                About
               </Link>
             </li>
 
@@ -76,11 +60,6 @@ export default function Footer() {
                 Terms of Service
               </Link>
             </li>
-            <li>
-              <Link href='#' className='hover:text-white transition'>
-                Cookie Policy
-              </Link>
-            </li>
           </ul>
         </div>
       </div>
@@ -88,26 +67,26 @@ export default function Footer() {
       {/* Bottom Bar */}
       <div className='flex flex-col md:flex-row justify-between items-center pt-8 border-t border-white/10'>
         <p className='text-zinc-500 text-sm mb-4 md:mb-0'>
-          © 2025 Lenz. All rights reserved.
+          &copy; {new Date().getFullYear()} Lenz. All rights reserved.
         </p>
 
         {/* Social Links */}
-        <div className='flex gap-6'>
-          <a href='#' className='text-zinc-400 hover:text-white transition'>
-            <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
-              <path d='M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z' />
-            </svg>
-          </a>
-          <a href='#' className='text-zinc-400 hover:text-white transition'>
-            <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
-              <path d='M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z' />
-            </svg>
-          </a>
-          <a href='#' className='text-zinc-400 hover:text-white transition'>
-            <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
-              <path d='M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.68c.223-.198-.054-.308-.346-.11l-6.4 4.03-2.76-.918c-.6-.183-.612-.6.125-.89l10.782-4.156c.5-.183.943.112.78.89z' />
-            </svg>
-          </a>
+        <div className='flex items-center gap-5'>
+          {socials.map((social) => (
+            <a
+              key={social.name}
+              href={social.href}
+              target='_blank'
+              rel='noopener noreferrer'
+              aria-label={social.name}
+              className='group relative p-3 bg-zinc-900/50 rounded-xl border border-white/5 text-zinc-400 transition-all duration-300 hover:text-white hover:bg-zinc-800 hover:-translate-y-1'
+            >
+              {/* Subtle Glow Background on Hover */}
+              <div className='absolute inset-0 rounded-xl bg-cyan-400/0 blur-md transition-all duration-300 group-hover:bg-cyan-400/10' />
+
+              <span className='relative z-10 text-xl'>{social.icon}</span>
+            </a>
+          ))}
         </div>
       </div>
     </footer>

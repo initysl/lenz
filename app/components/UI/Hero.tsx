@@ -1,6 +1,12 @@
-export default function Hero() {
+import Image from 'next/image';
+
+interface HeroProps {
+  onLaunchCamera: () => void;
+}
+
+export default function Hero({ onLaunchCamera }: HeroProps) {
   return (
-    <section className='pt-32 pb-20 grid grid-cols-12 gap-8'>
+    <section className=' pb-20 grid grid-cols-12 gap-8'>
       {/* Left Content */}
       <div className='col-span-12 lg:col-span-8'>
         <h1 className='text-7xl font-bold leading-tight mb-8'>
@@ -17,31 +23,20 @@ export default function Hero() {
 
         <div className='flex flex-wrap gap-6 items-end'>
           <div className='relative w-80 h-48 rounded-3xl overflow-hidden group'>
-            <img
-              src='/vr-headset-hero.jpg'
+            <Image
+              src='/vr-headset.svg'
               alt='VR'
+              width={40}
+              height={40}
               className='object-cover w-full h-full'
             />
-            <button className='absolute bottom-4 right-4 bg-[#C5FF41] text-black p-4 rounded-2xl flex items-center gap-2 font-bold hover:scale-105 transition'>
+            <button
+              onClick={onLaunchCamera}
+              className='absolute bottom-4 right-4 bg-[#C5FF41] text-black p-4 rounded-2xl flex items-center gap-2 font-bold hover:scale-105 transition'
+            >
               Get started <span>→</span>
             </button>
           </div>
-
-          {/* <div className='flex gap-10 items-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800'>
-            <div>
-              <p className='text-3xl font-bold'>
-                1K <span className='text-cyan-400 text-sm'>+</span>
-              </p>
-              <p className='text-xs text-zinc-400 uppercase'>Games Provided</p>
-            </div>
-            <div className='w-px h-10 bg-zinc-700' />
-            <div>
-              <p className='text-3xl font-bold'>
-                30K <span className='text-cyan-400 text-sm'>+</span>
-              </p>
-              <p className='text-xs text-zinc-400 uppercase'>Players Online</p>
-            </div>
-          </div> */}
         </div>
       </div>
 

@@ -16,7 +16,7 @@ export default function Features() {
       highlight: 'Learn more',
       description:
         'Discover universities, schools, hospitals, and government buildings with detailed information.',
-      image: '/education.jpg',
+      image: '/official.jpg',
       icon: '🎓',
       accent: 'bg-cyan-400',
     },
@@ -25,7 +25,7 @@ export default function Features() {
       highlight: 'Real-time',
       description:
         'Real-time detection of vehicles, pedestrians, traffic signs, and other objects in your environment.',
-      image: '/detection.jpg',
+      image: '/traffic.jpg',
       icon: '🚗',
       accent: 'bg-yellow-400',
     },
