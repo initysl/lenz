@@ -1,38 +1,79 @@
-export default function Features() {
-  return (
-    <section className='py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center'>
-      <div>
-        <h2 className='text-5xl font-bold mb-6 leading-tight'>
-          Building your own <br />
-          <span className='gradient-text'>world now</span>
-        </h2>
-        <p className='text-zinc-400 mb-8 max-w-md'>
-          Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet
-          sint. Velit officia consequat duis enim velit mollit.
-        </p>
-        <button className='px-8 py-3 rounded-full border border-zinc-700 hover:bg-white hover:text-black transition-all font-medium'>
-          START PLAYING
-        </button>
-      </div>
+// components/Features.tsx
 
-      <div className='relative'>
-        {/* Main Feature Image with specialized rounding */}
-        <div className='rounded-[60px] overflow-hidden border-8 border-zinc-900 shadow-2xl'>
-          <img
-            src='/vr-action.jpg'
-            alt='VR Gameplay'
-            className='w-full h-100 object-cover'
-          />
+export default function Features() {
+  const featureData = [
+    {
+      title: 'Landmark Recognition',
+      highlight: 'AI-Powered',
+      description:
+        'Identify famous landmarks, historical sites, and monuments instantly with AI-powered visual recognition.',
+      image: '/landmark.jpg',
+      icon: '🏛️',
+      accent: 'bg-[#C5FF41]',
+    },
+    {
+      title: 'Educational Insights',
+      highlight: 'Learn more',
+      description:
+        'Discover universities, schools, hospitals, and government buildings with detailed information.',
+      image: '/education.jpg',
+      icon: '🎓',
+      accent: 'bg-cyan-400',
+    },
+    {
+      title: 'Object Detection',
+      highlight: 'Real-time',
+      description:
+        'Real-time detection of vehicles, pedestrians, traffic signs, and other objects in your environment.',
+      image: '/detection.jpg',
+      icon: '🚗',
+      accent: 'bg-yellow-400',
+    },
+  ];
+
+  return (
+    <section id='features' className='py-20 flex flex-col gap-24'>
+      {featureData.map((feature, index) => (
+        <div
+          key={index}
+          className='grid grid-cols-1 lg:grid-cols-12 gap-8 items-center'
+        >
+          {/* Text Content - spans 5 columns */}
+          <div
+            className={`lg:col-span-5 ${index % 2 !== 0 ? 'lg:order-2 lg:pl-12' : 'lg:pr-12'}`}
+          >
+            <h2 className='text-4xl font-bold mb-4 leading-tight'>
+              {feature.title} <br />
+              <span className='gradient-text'>{feature.highlight}</span>
+            </h2>
+            <p className='text-zinc-400 mb-6 text-sm leading-relaxed'>
+              {feature.description}
+            </p>
+          </div>
+
+          {/* Visual Content - spans 7 columns, shorter height */}
+          <div
+            className={`relative lg:col-span-7 ${index % 2 !== 0 ? 'lg:order-1' : ''}`}
+          >
+            <div className='relative h-80 w-full rounded-[40px] overflow-hidden border-[6px] border-zinc-900 shadow-xl'>
+              <img
+                src={feature.image}
+                alt={feature.title}
+                className='w-full h-full object-cover'
+              />
+              {/* Optional: Dark overlay to make the image look more "integrated" */}
+              <div className='absolute inset-0 bg-linear-to-t from-black/40 to-transparent' />
+            </div>
+
+            {/* Smaller Floating Icon */}
+            <div
+              className={`absolute -bottom-6 ${index % 2 === 0 ? '-left-6' : '-right-6'} w-24 h-24 ${feature.accent} rounded-full flex items-center justify-center border-[6px] border-[#0A0A0A] shadow-2xl z-10`}
+            >
+              <span className='text-3xl rotate-12'>{feature.icon}</span>
+            </div>
+          </div>
         </div>
-        {/* Floating Decorative Element (Small VR Headset) */}
-        <div className='absolute -bottom-10 -left-10 w-40 h-40 bg-[#C5FF41] rounded-full flex items-center justify-center p-4 border-8 border-[#0A0A0A]'>
-          <img
-            src='/headset-icon.png'
-            alt='icon'
-            className='w-full rotate-12'
-          />
-        </div>
-      </div>
+      ))}
     </section>
   );
 }

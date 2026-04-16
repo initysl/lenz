@@ -1,42 +1,20 @@
-const products = [
-  { id: 1, name: 'Standalone VR', price: '$230', img: '/vr1.png' },
-  { id: 2, name: 'Premium VR', price: '$235', img: '/vr2.png' },
-];
+// components/ProductSection.tsx
+import Image from 'next/image';
 
-export default function ProductGrid() {
+export default function ProductSection() {
   return (
-    <section className='py-20'>
-      <div className='bg-linear-to-br from-[#B4F1FF] via-[#E8FFB1] to-[#FFF6A2] rounded-[40px] p-12 text-black flex flex-col md:flex-row justify-between items-center gap-10'>
-        <div className='max-w-xs'>
-          <h2 className='text-4xl font-bold mb-4'>Shop VR products</h2>
-          <p className='text-sm opacity-70 mb-6'>
-            Explore our latest standalone hardware for immersive experiences.
+    <section className='py-24'>
+      <div className='relative group overflow-hidden rounded-[40px] p-12 w-full h-120 border-10  shadow-3xl bg-black'>
+        <Image
+          src='/lenz.png'
+          alt='Smartphone running Lenz AR identifying NYU Hall and Tesla Model 3 in landscape'
+          layout='fill'
+          className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 z-0'
+        />
+        <div className='absolute inset-x-0 bottom-0 p-6 z-20 bg-black/60 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity flex justify-between items-center'>
+          <p className='text-sm flex items-center justify-center font-bold tracking-tight'>
+            Immersive Context Active: {'[Tesla Model 3, NYU Hall]'}
           </p>
-          <button className='flex items-center gap-2 font-bold underline'>
-            View All →
-          </button>
-        </div>
-
-        <div className='flex gap-8'>
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className='bg-white/40 p-6 rounded-3xl backdrop-blur-md w-48 text-center'
-            >
-              <img
-                src={product.img}
-                alt={product.name}
-                className='h-32 mx-auto object-contain mb-4'
-              />
-              <p className='text-sm font-bold'>{product.name}</p>
-              <div className='flex justify-between items-center mt-4'>
-                <span className='font-bold'>{product.price}</span>
-                <button className='bg-black text-white text-xs px-3 py-1 rounded-full'>
-                  BUY NOW
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </section>

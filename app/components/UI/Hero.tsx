@@ -27,7 +27,7 @@ export default function Hero() {
             </button>
           </div>
 
-          <div className='flex gap-10 items-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800'>
+          {/* <div className='flex gap-10 items-center bg-zinc-900/50 p-6 rounded-3xl border border-zinc-800'>
             <div>
               <p className='text-3xl font-bold'>
                 1K <span className='text-cyan-400 text-sm'>+</span>
@@ -41,7 +41,7 @@ export default function Hero() {
               </p>
               <p className='text-xs text-zinc-400 uppercase'>Players Online</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
