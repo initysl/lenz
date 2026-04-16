@@ -9,7 +9,7 @@ export default function Hero() {
         </h1>
         <p className='text-zinc-400 text-lg md:text-xl max-w-2xl mb-12'>
           Discover the world around you <br />
-          <span className='gradient-text'>
+          <span className=''>
             Point your camera at buildings, landmarks, and objects to get
             instant information with augmented reality overlays.
           </span>
