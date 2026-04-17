@@ -1,0 +1,22 @@
+{
+  "name": "Lenz - AR Object Detection",
+  "short_name": "Lenz",
+  "description": "Discover the world around you with real-time AR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#22D3EE",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

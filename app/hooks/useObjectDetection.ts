@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import '@tensorflow/tfjs';
 import { DetectedObject } from '@/app/types';
 import { DETECTION_CONFIG } from '@/app/config/detection.config';
 import { PerformanceMonitor } from '@/app/utils/performanceMonitor';
@@ -11,40 +9,95 @@ export const useObjectDetection = (
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isActive: boolean,
 ) => {
-  const [model, setModel] = useState<cocoSsd.ObjectDetection | null>(null);
-  const [isModelLoading, setIsModelLoading] = useState(true);
   const [detectedObjects, setDetectedObjects] = useState<DetectedObject[]>([]);
   const [fps, setFps] = useState(0);
+  const [isModelLoading, setIsModelLoading] = useState(true);
+  const [useWorker] = useState(() => typeof Worker !== 'undefined');
 
+  const workerRef = useRef<Worker | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const performanceMonitor = useRef(new PerformanceMonitor());
   const lastDetectionTime = useRef(0);
+  const isProcessing = useRef(false);
 
-  // Load COCO-SSD model
+  // Initialize worker or fallback
   useEffect(() => {
-    const loadModel = async () => {
-      try {
-        console.log('Loading COCO-SSD model...');
-        const loadedModel = await cocoSsd.load();
-        setModel(loadedModel);
+    if (!useWorker) {
+      // Fallback: load model directly
+      import('@tensorflow-models/coco-ssd').then(async (cocoSsd) => {
+        const model = await cocoSsd.load();
+        workerRef.current = model as any; // Store model
         setIsModelLoading(false);
-        console.log('Model loaded successfully');
-      } catch (error) {
-        console.error('Error loading model:', error);
-        setIsModelLoading(false);
+      });
+      return;
+    }
+
+    // Use Web Worker
+    const worker = new Worker('/workers/detectionWorker.js');
+
+    worker.onmessage = (e) => {
+      const { type, predictions, error } = e.data;
+
+      switch (type) {
+        case 'MODEL_LOADED':
+          setIsModelLoading(false);
+          console.log('Detection model loaded in worker');
+          break;
+
+        case 'DETECTIONS':
+          isProcessing.current = false;
+          processDetections(predictions);
+          break;
+
+        case 'ERROR':
+        case 'MODEL_ERROR':
+          console.error('Worker error:', error);
+          isProcessing.current = false;
+          setIsModelLoading(false);
+          break;
       }
     };
 
-    loadModel();
+    worker.postMessage({ type: 'LOAD_MODEL' });
+    workerRef.current = worker;
+
+    return () => {
+      worker.terminate();
+    };
+  }, [useWorker]);
+
+  // Initialize offscreen canvas
+  useEffect(() => {
+    canvasRef.current = document.createElement('canvas');
+  }, []);
+
+  // Process detection results
+  const processDetections = useCallback((predictions: any[]) => {
+    const filteredObjects: DetectedObject[] = predictions
+      .filter(
+        (prediction) => prediction.score >= DETECTION_CONFIG.MIN_CONFIDENCE,
+      )
+      .map((prediction, index) => ({
+        id: `${prediction.class}-${index}-${Date.now()}`,
+        class: prediction.class,
+        score: prediction.score,
+        bbox: prediction.bbox as [number, number, number, number],
+        timestamp: Date.now(),
+      }));
+
+    setDetectedObjects(filteredObjects);
+    performanceMonitor.current.updateFrame();
+    setFps(performanceMonitor.current.getFPS());
   }, []);
 
   // Detection loop
   const detectObjects = useCallback(async () => {
     if (
-      !model ||
       !videoRef.current ||
       !isActive ||
-      videoRef.current.readyState !== 4
+      videoRef.current.readyState !== 4 ||
+      isProcessing.current
     ) {
       if (isActive) {
         animationFrameRef.current = requestAnimationFrame(detectObjects);
@@ -55,59 +108,58 @@ export const useObjectDetection = (
     const currentTime = performance.now();
     const timeSinceLastDetection = currentTime - lastDetectionTime.current;
 
-    // Throttle detection based on config
     if (timeSinceLastDetection < DETECTION_CONFIG.DETECTION_INTERVAL) {
       animationFrameRef.current = requestAnimationFrame(detectObjects);
       return;
     }
 
+    isProcessing.current = true;
+    lastDetectionTime.current = currentTime;
+
     try {
-      const detectionStartTime = performance.now();
+      const video = videoRef.current;
+      const canvas = canvasRef.current!;
 
-      // Run prediction
-      const predictions = await model.detect(videoRef.current);
+      // Resize canvas to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-      const detectionEndTime = performance.now();
-      const detectionTime = detectionEndTime - detectionStartTime;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(video, 0, 0);
 
-      performanceMonitor.current.recordDetectionTime(detectionTime);
-      lastDetectionTime.current = currentTime;
+      if (useWorker && workerRef.current instanceof Worker) {
+        // Send to worker
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      // Filter and transform predictions
-      const filteredObjects: DetectedObject[] = predictions
-        .filter((prediction) => {
-          // Filter by confidence
-          if (prediction.score < DETECTION_CONFIG.MIN_CONFIDENCE) return false;
-
-          // Filter by relevant classes (optional)
-          // Uncomment to enable class filtering:
-          // return DETECTION_CONFIG.RELEVANT_CLASSES.includes(prediction.class);
-
-          return true;
-        })
-        .map((prediction, index) => ({
-          id: `${prediction.class}-${index}-${Date.now()}`,
-          class: prediction.class,
-          score: prediction.score,
-          bbox: prediction.bbox as [number, number, number, number],
-          timestamp: Date.now(),
-        }));
-
-      setDetectedObjects(filteredObjects);
-
-      // Update FPS
-      performanceMonitor.current.updateFrame();
-      setFps(performanceMonitor.current.getFPS());
+        workerRef.current.postMessage(
+          {
+            type: 'DETECT',
+            payload: {
+              imageData: imageData.data.buffer,
+              width: canvas.width,
+              height: canvas.height,
+            },
+          },
+          [imageData.data.buffer], // Transfer ownership
+        );
+      } else if (workerRef.current) {
+        // Fallback: use model directly
+        const model = workerRef.current as any;
+        const predictions = await model.detect(canvas);
+        processDetections(predictions);
+        isProcessing.current = false;
+      }
     } catch (error) {
       console.error('Detection error:', error);
+      isProcessing.current = false;
     }
 
     animationFrameRef.current = requestAnimationFrame(detectObjects);
-  }, [model, videoRef, isActive]);
+  }, [videoRef, isActive, useWorker, processDetections]);
 
-  // Start/stop detection loop
+  // Start/stop detection
   useEffect(() => {
-    if (isActive && model) {
+    if (isActive && !isModelLoading) {
       detectObjects();
     }
 
@@ -116,7 +168,7 @@ export const useObjectDetection = (
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isActive, model, detectObjects]);
+  }, [isActive, isModelLoading, detectObjects]);
 
   return {
     isModelLoading,

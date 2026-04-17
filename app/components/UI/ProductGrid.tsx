@@ -7,7 +7,7 @@ export default function ProductSection() {
         <Image
           src='/lenz.png'
           alt='Smartphone running Lenz AR identifying NYU Hall and Tesla Model 3 in landscape'
-          layout='fill'
+          fill
           className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 z-0'
         />
         <div className='absolute inset-x-0 bottom-0 p-6 z-20 bg-black/60 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 transition-opacity flex justify-center items-center rounded-b-2xl'>

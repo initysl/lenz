@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { ErrorBoundary } from '@/app/components/shared/ErrorBoundary';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
   title: 'Lenz - AR Object Detection',
   description:
     'Discover the world around you with real-time AR object detection',
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
@@ -23,6 +25,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#0A0A0A',
 };
 
 export default function RootLayout({
@@ -35,7 +38,9 @@ export default function RootLayout({
       lang='en'
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className='min-h-full flex flex-col'>{children}</body>
+      <body className='h-full'>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </body>
     </html>
   );
 }

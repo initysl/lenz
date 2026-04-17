@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DetectedObject, Place, GPSCoordinates } from '@/app/types';
 import { spatialUtils } from '@/app/utils/spatialCalculations';
 import { OpenStreetMapService } from '@/app/services/openStreetMapService';
@@ -23,9 +23,19 @@ export const useSpatialMatching = (
   const [lastFetchLocation, setLastFetchLocation] =
     useState<GPSCoordinates | null>(null);
 
+  // Add debounce timer ref
+  const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
   // Fetch nearby places when location changes significantly
   useEffect(() => {
     if (!location) return;
+
+    // Clear existing timer
+    if (fetchTimerRef.current) {
+      clearTimeout(fetchTimerRef.current);
+    }
 
     // Check if we need to fetch (moved more than 50m from last fetch)
     if (lastFetchLocation) {
@@ -39,42 +49,51 @@ export const useSpatialMatching = (
       if (distance < 50) return; // Don't fetch if moved less than 50m
     }
 
-    const fetchPlaces = async () => {
-      setIsLoading(true);
-      try {
-        const places = await OpenStreetMapService.fetchNearbyPlaces(
-          location.latitude,
-          location.longitude,
-          API_CONFIG.SEARCH_RADIUS.MEDIUM,
-        );
-
-        // Calculate distance and bearing for each place
-        const placesWithMetrics = places.map((place) => ({
-          ...place,
-          distance: spatialUtils.calculateDistance(
+    // Debounce: wait 1 second after location stabilizes
+    fetchTimerRef.current = setTimeout(() => {
+      const fetchPlaces = async () => {
+        setIsLoading(true);
+        try {
+          const places = await OpenStreetMapService.fetchNearbyPlaces(
             location.latitude,
             location.longitude,
-            place.latitude,
-            place.longitude,
-          ),
-          bearing: spatialUtils.calculateBearing(
-            location.latitude,
-            location.longitude,
-            place.latitude,
-            place.longitude,
-          ),
-        }));
+            API_CONFIG.SEARCH_RADIUS.MEDIUM,
+          );
 
-        setNearbyPlaces(placesWithMetrics);
-        setLastFetchLocation(location);
-      } catch (error) {
-        console.error('Failed to fetch nearby places:', error);
-      } finally {
-        setIsLoading(false);
+          // Calculate distance and bearing for each place
+          const placesWithMetrics = places.map((place) => ({
+            ...place,
+            distance: spatialUtils.calculateDistance(
+              location.latitude,
+              location.longitude,
+              place.latitude,
+              place.longitude,
+            ),
+            bearing: spatialUtils.calculateBearing(
+              location.latitude,
+              location.longitude,
+              place.latitude,
+              place.longitude,
+            ),
+          }));
+
+          setNearbyPlaces(placesWithMetrics);
+          setLastFetchLocation(location);
+        } catch (error) {
+          console.error('Failed to fetch nearby places:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchPlaces();
+    }, 1000); // 1 second debounce
+
+    return () => {
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
       }
     };
-
-    fetchPlaces();
   }, [location, lastFetchLocation]);
 
   // Match detected objects to places

@@ -29,7 +29,6 @@ export default function Home() {
     return <CameraFeed />;
   }
 
-  // Landing page
   return (
     <main className='min-h-screen bg-[#0A0A0A] text-white'>
       <Navbar />

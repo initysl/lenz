@@ -6,6 +6,7 @@ import { CameraPermissionState } from '@/app/types';
 export const useCamera = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const startRequestRef = useRef(0);
 
   const [permissionState, setPermissionState] = useState<CameraPermissionState>(
     {
@@ -34,12 +35,14 @@ export const useCamera = () => {
   const startCamera = useCallback(async () => {
     if (!checkSupport()) return;
 
+    const requestId = ++startRequestRef.current;
     setIsLoading(true);
 
     try {
       // Stop existing stream if any
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
 
       const constraints: MediaStreamConstraints = {
@@ -53,11 +56,31 @@ export const useCamera = () => {
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
+      if (requestId !== startRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       streamRef.current = stream;
 
       if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+
+        try {
+          await videoRef.current.play();
+        } catch (error: any) {
+          const wasInterrupted =
+            error?.name === 'AbortError' &&
+            requestId !== startRequestRef.current;
+
+          if (wasInterrupted) {
+            return;
+          }
+
+          throw error;
+        }
       }
 
       setPermissionState({ state: 'granted' });
@@ -89,12 +112,15 @@ export const useCamera = () => {
 
   // Stop camera stream
   const stopCamera = useCallback(() => {
+    startRequestRef.current++;
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
     if (videoRef.current) {
+      videoRef.current.pause();
       videoRef.current.srcObject = null;
     }
 
