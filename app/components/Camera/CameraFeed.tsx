@@ -1,7 +1,14 @@
 'use client';
 
 import { useCamera } from '@/app/hooks/useCamera';
-import { useEffect } from 'react';
+import { useObjectDetection } from '@/app/hooks/useObjectDetection';
+import { useGeolocation } from '@/app/hooks/useGeolocation';
+import { useDeviceOrientation } from '@/app/hooks/useDeviceOrientation';
+import { useEffect, useState } from 'react';
+import { DetectionCanvas } from '@/app/components/Detection/DetectionCanvas';
+import { DetectionStats } from '@/app/components/Detection/DetectionStats';
+import { useSpatialMatching } from '@/app/hooks/useSpatialMatching';
+import { AROverlay } from '@/app/components/AR/AROverlay';
 
 export const CameraFeed = () => {
   const {
@@ -14,8 +21,32 @@ export const CameraFeed = () => {
     flipCamera,
   } = useCamera();
 
+  const { isModelLoading, detectedObjects, fps } = useObjectDetection(
+    videoRef,
+    isStreamActive,
+  );
+
+  const {
+    location,
+    error: gpsError,
+    accuracyLevel,
+  } = useGeolocation(isStreamActive);
+
+  const {
+    compassHeading,
+    needsPermission: orientationNeedsPermission,
+    requestPermission: requestOrientationPermission,
+  } = useDeviceOrientation(isStreamActive);
+
+  const { matchedPlaces } = useSpatialMatching(
+    detectedObjects,
+    location,
+    compassHeading,
+  );
+
+  const [showStats, setShowStats] = useState(true);
+
   useEffect(() => {
-    // Auto-start camera when component mounts
     startCamera();
   }, []);
 
@@ -29,12 +60,29 @@ export const CameraFeed = () => {
         muted
       />
 
-      {/* Loading Overlay */}
+      {/* Detection Canvas Overlay */}
+      {isStreamActive && !isModelLoading && (
+        <DetectionCanvas
+          videoRef={videoRef}
+          detectedObjects={detectedObjects}
+        />
+      )}
+
+      {/* Loading Overlays */}
       {isLoading && (
         <div className='absolute inset-0 flex items-center justify-center bg-black/70 z-10'>
           <div className='text-center'>
             <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
             <p className='text-white text-lg'>Initializing camera...</p>
+          </div>
+        </div>
+      )}
+
+      {isModelLoading && isStreamActive && (
+        <div className='absolute inset-0 flex items-center justify-center bg-black/70 z-10'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4'></div>
+            <p className='text-white text-lg'>Loading AI model...</p>
           </div>
         </div>
       )}
@@ -70,48 +118,89 @@ export const CameraFeed = () => {
         </div>
       )}
 
-      {/* Unsupported Browser */}
-      {permissionState.state === 'unsupported' && (
-        <div className='absolute inset-0 flex items-center justify-center bg-black/90 z-10'>
-          <div className='text-center px-6'>
-            <p className='text-white text-lg'>{permissionState.error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Camera Controls */}
-      {isStreamActive && (
-        <div className='absolute bottom-8 left-0 right-0 flex justify-center z-20'>
+      {/* Orientation Permission (iOS) */}
+      {orientationNeedsPermission && isStreamActive && (
+        <div className='absolute top-24 left-1/2 transform -translate-x-1/2 z-20 bg-black/80 backdrop-blur-md px-6 py-3 rounded-full'>
           <button
-            onClick={flipCamera}
-            className='bg-white/20 backdrop-blur-md hover:bg-white/30 text-white p-4 rounded-full transition-all'
-            aria-label='Flip camera'
+            onClick={requestOrientationPermission}
+            className='text-white text-sm font-medium'
           >
-            <svg
-              className='w-6 h-6'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-              />
-            </svg>
+            Enable Compass →
           </button>
         </div>
       )}
 
-      {/* Camera Indicator */}
+      {/* Stats Overlay */}
+      {isStreamActive && !isModelLoading && showStats && (
+        <DetectionStats
+          fps={fps}
+          objectCount={detectedObjects.length}
+          location={location}
+          accuracyLevel={accuracyLevel}
+          compassHeading={compassHeading}
+          gpsError={gpsError}
+        />
+      )}
+
+      {/* AR Info Cards */}
+      {isStreamActive && !isModelLoading && (
+        <AROverlay matchedPlaces={matchedPlaces} />
+      )}
+
+      {/* Controls */}
       {isStreamActive && (
-        <div className='absolute top-4 left-4 z-20'>
-          <div className='flex items-center gap-2 bg-red-600/80 backdrop-blur-sm px-3 py-2 rounded-full'>
-            <div className='w-2 h-2 bg-white rounded-full animate-pulse'></div>
-            <span className='text-white text-sm font-medium'>LIVE</span>
+        <>
+          {/* Camera Indicator */}
+          <div className='absolute top-4 left-4 z-20'>
+            <div className='flex items-center gap-2 bg-red-600/80 backdrop-blur-sm px-3 py-2 rounded-full'>
+              <div className='w-2 h-2 bg-white rounded-full animate-pulse'></div>
+              <span className='text-white text-sm font-medium'>LIVE</span>
+            </div>
           </div>
-        </div>
+
+          {/* Bottom Controls */}
+          <div className='absolute bottom-8 left-0 right-0 flex justify-center gap-4 z-20'>
+            <button
+              onClick={flipCamera}
+              className='bg-white/20 backdrop-blur-md hover:bg-white/30 text-white p-4 rounded-full transition-all'
+              aria-label='Flip camera'
+            >
+              <svg
+                className='w-6 h-6'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className='bg-white/20 backdrop-blur-md hover:bg-white/30 text-white p-4 rounded-full transition-all'
+              aria-label='Toggle stats'
+            >
+              <svg
+                className='w-6 h-6'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+                />
+              </svg>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

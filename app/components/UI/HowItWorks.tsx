@@ -29,9 +29,6 @@ export default function HowItWorks() {
             Three simple steps to unlock augmented reality insights about your
             surroundings.
           </p>
-          <button className='hidden lg:block font-bold underline text-sm uppercase'>
-            Learn more
-          </button>
         </div>
 
         {/* Right Content: The Grid - 1 column mobile, 3 columns desktop */}
